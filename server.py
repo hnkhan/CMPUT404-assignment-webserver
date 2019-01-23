@@ -32,8 +32,19 @@ class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
         self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        recv_data = str(self.data).split()
+        get_request = ""
+        for token_index in range(len(recv_data)):
+            if recv_data[token_index][0:5] == "b'GET":
+                get_request = recv_data[token_index+1]
+                break
+        with open("www" + get_request, "r") as serve_file:
+            data = serve_file.read()
+        print("Got a request of: %s\n" % recv_data)
+        print("GET REQUEST: %s\n" % get_request)
+        response = "HTTP/1.1 200 OK\n" + "Content-Type: text/html" + "\r\n" + data 
+        #self.request.sendall(bytearray("OK",'utf-8'))
+        self.request.sendall(bytearray(response,'utf-8'))
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
