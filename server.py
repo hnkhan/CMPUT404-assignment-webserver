@@ -35,6 +35,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
         tokens = self.data.decode().split()
         mime_type = ""
         response_code = ""
+        valid_redirection = False
+        
         try:
             r_index = tokens.index("GET")
             r_data = tokens[r_index+1]
@@ -50,19 +52,28 @@ class MyWebServer(socketserver.BaseRequestHandler):
             if (len(r_data.split(".")) == 2):
                 if (r_data.split(".")[1] == "html"):
                     mime_type = "text/html"
+                    response_code = "200 OK"
                 if (r_data.split(".")[1] == "css"):
                     mime_type = "text/css"
+                    response_code = "200 OK"
+
+            else:
+                r_data += "/index.html"
+                response_code = "301 Moved Permanently"
             
             with open("www" + r_data, "r") as serve_file:
                 data = serve_file.read()
+                valid_redirection = True
+                redirect_address = "http://127.0.0.1:8080" + r_data
 
         except:
             response_code = "404 Not Found"
             mime_type = "text/html"
             data = "<html><body><h1>404 Not Found</h1></body></html>"
-
-        response = "HTTP/1.1 %s\nContent-Type: %s\r\n\r\n%s" % (response_code, mime_type, data)
-        print ("RESPONSE: %s\n" % response)
+        if ((response_code == "301 Moved Permanently") and (valid_redirection == True)):
+            response = "HTTP/1.1 %s\nLocation: %s\r\n\r\n" % (response_code, redirect_address)
+        else:
+            response = "HTTP/1.1 %s\nContent-Type: %s\r\n\r\n%s" % (response_code, mime_type, data)
 
         self.request.sendall(bytearray(response,'utf-8'))
 
